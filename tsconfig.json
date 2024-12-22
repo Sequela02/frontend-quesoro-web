@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "esnext",              // "esnext" para mejor soporte de características modernas de JS
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",              // Usar "esnext" para módulos
+    "moduleResolution": "node",      // Resolución de módulos estilo Node
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",                   // Configuración base
+    "paths": {
+      "@/*": ["src/*"]                // Asegúrate de que los alias apunten a "src"
+    }
+  },
+  "include": [
+    "src/**/*",                        // Incluir todos los archivos dentro de la carpeta src
+    "components/**/*"                  // Incluir la carpeta de componentes si está fuera de src
+  ]
+}
