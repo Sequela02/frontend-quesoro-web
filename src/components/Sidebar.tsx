@@ -141,7 +141,7 @@ const Sidebar = () => {
           {!collapsed && 'Gestión'}
         </SectionSeparator>
         
-        <NavLink to="/rutas" collapsed={collapsed}>
+        <NavLink to="/routes" collapsed={collapsed}>
           <FiMap size={20} />
           <span>Rutas</span>
         </NavLink>
@@ -158,15 +158,15 @@ const Sidebar = () => {
           {!collapsed && 'Configuración'}
         </SectionSeparator>
 
-        <NavLink to="/giros" collapsed={collapsed}>
+        <NavLink to="/spins" collapsed={collapsed}>
           <FiCompass size={20} />
           <span>Giros</span>
         </NavLink>
-        <NavLink to="/grupos" collapsed={collapsed}>
+        <NavLink to="/groups" collapsed={collapsed}>
           <FiGrid size={20} />
           <span>Grupos</span>
         </NavLink>
-        <NavLink to="/usuarios" collapsed={collapsed}>
+        <NavLink to="/users" collapsed={collapsed}>
           <FiUsers size={20} />
           <span>Usuarios</span>
         </NavLink>
