@@ -3,6 +3,10 @@ import styled from 'styled-components';
 import { FaUser, FaLock } from 'react-icons/fa'; // React icons for username and password
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for redirect
 import Logo from '../utils/Logo.png';
+import { ENDPOINTS } from '../constants/apiEndpoints';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+
 
 const Container = styled.div`
   display: flex;
@@ -118,67 +122,89 @@ const ForgotPassword = styled.a`
   }
 `;
 
-interface LoginPageProps {
-  setIsLoggedIn: (isLoggedIn: boolean) => void;
-}
 
-const LoginPage = ({ setIsLoggedIn }: LoginPageProps) => {
-  const [username, setUsername] = useState<string>(''); // Type username as string
-  const [password, setPassword] = useState<string>(''); // Type password as string
-  const navigate = useNavigate(); // Initialize useNavigate hook
 
-  // Hardcoded fake user credentials
-  const fakeUser = {
-    username: 'fakeuser',
-    password: 'password123',
-  };
+const LoginPage = () => {
+  const [username, setUsername] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
+  const { setIsLoggedIn, setToken } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === fakeUser.username && password === fakeUser.password) {
-      alert('Login successful!');
-      navigate('/dashboard'); // Try navigating first
-      setIsLoggedIn(true); // Then update the login state
-    } else {
-      alert('Invalid credentials');
+    setError('');
+    setIsLoading(true);
+  
+    try {
+      const response = await axios.post(ENDPOINTS.login, { username, password });
+      const { token } = response.data; // Extract the token from the response data
+      localStorage.setItem('token', token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setIsLoggedIn(true);
+      setToken(token);
+  
+      navigate('/dashboard');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || 'An error occurred during login');
+      } else {
+        setError('An unexpected error occurred');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
-  
 
   return (
     <Container>
-      <div>
-        <LogoSection>
-          <LogoImage src={Logo} alt="Logo" />
-        </LogoSection>
-        <FormSection>
-          <Title>Iniciar sesión</Title>
-          <form onSubmit={handleSubmit}>
-            <InputWrapper>
-              <FaUser />
-              <Input
-                type="text"
-                placeholder="Usuario"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </InputWrapper>
-            <InputWrapper>
-              <FaLock />
-              <Input
-                type="password"
-                placeholder="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </InputWrapper>
-            <Button type="submit">Entrar</Button>
-          </form>
-          <ForgotPassword href="#">¿Olvidaste tu contraseña?</ForgotPassword>
-        </FormSection>
-      </div>
+      <LogoSection>
+        <LogoImage src={Logo} alt="Logo" />
+      </LogoSection>
+      <FormSection>
+        <Title>Iniciar sesión</Title>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+        <form onSubmit={handleSubmit}>
+          <InputWrapper>
+            <FaUser />
+            <Input
+              type="text"
+              placeholder="Usuario"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={isLoading}
+            />
+          </InputWrapper>
+          <InputWrapper>
+            <FaLock />
+            <Input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+            />
+          </InputWrapper>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Cargando...' : 'Entrar'}
+          </Button>
+        </form>
+        <ForgotPassword>¿Olvidaste tu contraseña?</ForgotPassword>
+      </FormSection>
     </Container>
   );
 };
+
+const ErrorMessage = styled.div`
+  color: #dc2626;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+`;
 
 export default LoginPage;

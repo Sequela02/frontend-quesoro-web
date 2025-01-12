@@ -18,8 +18,8 @@ const DropDownTrigger = styled.button<{ disabled?: boolean }>`
   background: transparent;
   border: 1px solid #eaeaea;
   border-radius: 8px;
-  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
-  opacity: ${props => props.disabled ? 0.6 : 1};
+  cursor: ${props => (props.disabled ? 'not-allowed' : 'pointer')};
+  opacity: ${props => (props.disabled ? 0.6 : 1)};
   transition: all 0.2s ease;
 
   &:hover {
@@ -28,19 +28,24 @@ const DropDownTrigger = styled.button<{ disabled?: boolean }>`
   }
 `;
 
-const DropDownContent = styled.div<{ isOpen: boolean; position: string }>`
+const DropDownContent = styled.div.attrs<{ $isOpen: boolean; $position: string }>(
+  ({ $isOpen, $position }) => ({
+    style: {
+      opacity: $isOpen ? 1 : 0,
+      visibility: $isOpen ? 'visible' : 'hidden',
+      transform: $isOpen ? 'translateY(0)' : 'translateY(-8px)',
+    },
+  })
+)`
   position: absolute;
-  ${props => props.position.includes('bottom') ? 'top: 100%;' : 'bottom: 100%;'}
-  ${props => props.position.includes('right') ? 'right: 0;' : 'left: 0;'}
+  ${props => (props.$position.includes('bottom') ? 'top: 100%;' : 'bottom: 100%;')}
+  ${props => (props.$position.includes('right') ? 'right: 0;' : 'left: 0;')}
   min-width: 200px;
   background: white;
   border-radius: 8px;
   margin-top: 0.5rem;
   padding: 0.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  opacity: ${props => props.isOpen ? 1 : 0};
-  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
-  transform: ${props => props.isOpen ? 'translateY(0)' : 'translateY(-8px)'};
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1000;
 `;
@@ -66,11 +71,11 @@ const Separator = styled.div`
   margin: 0.5rem 0;
 `;
 
-const DropDown: React.FC<DropDownProps> = ({ 
-  disabled, 
-  children, 
-  trigger, 
-  position = 'bottom-right' 
+const DropDown: React.FC<DropDownProps> = ({
+  disabled,
+  children,
+  trigger,
+  position = 'bottom-right'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -81,20 +86,16 @@ const DropDown: React.FC<DropDownProps> = ({
         setIsOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   return (
     <DropDownContainer ref={dropdownRef}>
-      <DropDownTrigger 
-        onClick={() => !disabled && setIsOpen(!isOpen)} 
-        disabled={disabled}
-      >
+      <DropDownTrigger onClick={() => !disabled && setIsOpen(!isOpen)} disabled={disabled}>
         {trigger}
       </DropDownTrigger>
-      <DropDownContent isOpen={isOpen} position={position}>
+      <DropDownContent $isOpen={isOpen} $position={position}>
         {children}
       </DropDownContent>
     </DropDownContainer>

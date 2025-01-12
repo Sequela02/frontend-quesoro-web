@@ -1,17 +1,28 @@
-import { useState } from 'react';
-import styled from 'styled-components';
-import { Link } from 'react-router-dom';
-import { DropDown, DropDownItem, Separator } from './DropDown';
-import { FiHome, FiMap, FiUsers, FiBox, FiCompass, FiGrid, FiSettings, FiChevronLeft } from 'react-icons/fi';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import { Link } from "react-router-dom";
+import { DropDown, DropDownItem, Separator } from "./DropDown";
+import {
+  FiHome,
+  FiMap,
+  FiUsers,
+  FiBox,
+  FiCompass,
+  FiGrid,
+  FiSettings,
+  FiChevronLeft,
+} from "react-icons/fi";
 
-const SidebarContainer = styled.div<{ collapsed: boolean }>`
+// Styled Components
+const SidebarContainer = styled.div<{ $collapsed: boolean }>`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   height: 100vh;
   background: #fafafa;
   border-right: 1px solid #f0f0f0;
-  width: ${props => props.collapsed ? '78px' : '280px'};
+  width: ${(props) => (props.$collapsed ? "78px" : "280px")};
   padding: 32px 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -24,7 +35,9 @@ const NavLinks = styled.div`
   padding: 0 16px;
 `;
 
-const NavLink = styled(Link)<{ collapsed: boolean }>`
+const NavLink = styled(Link).withConfig({
+  shouldForwardProp: (prop) => prop !== "$collapsed",
+})<{ $collapsed: boolean }>`
   padding: 12px 16px;
   color: #64748b;
   text-decoration: none;
@@ -34,7 +47,7 @@ const NavLink = styled(Link)<{ collapsed: boolean }>`
   gap: 16px;
   border-radius: 12px;
   font-weight: 500;
-  
+
   &:hover {
     background: #f1f5f9;
     color: #0f172a;
@@ -47,13 +60,15 @@ const NavLink = styled(Link)<{ collapsed: boolean }>`
   }
 
   span {
-    display: ${props => props.collapsed ? 'none' : 'block'};
+    display: ${(props) => (props.$collapsed ? "none" : "block")};
     font-size: 14px;
   }
 `;
 
-const SectionSeparator = styled.div<{ collapsed: boolean }>`
-  padding: ${props => props.collapsed ? '8px' : '8px 16px'};
+const SectionSeparator = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== "$collapsed",
+})<{ $collapsed: boolean }>`
+  padding: ${(props) => (props.$collapsed ? "8px" : "8px 16px")};
   font-size: 11px;
   color: #94a3b8;
   letter-spacing: 0.05em;
@@ -62,7 +77,7 @@ const SectionSeparator = styled.div<{ collapsed: boolean }>`
   margin-bottom: 8px;
 `;
 
-const UserSection = styled.div<{ collapsed: boolean }>`
+const UserSection = styled.div<{ $collapsed: boolean }>`
   padding: 16px;
   margin: 0 16px;
   display: flex;
@@ -97,7 +112,9 @@ const OnlineStatus = styled.div`
   right: 2px;
 `;
 
-const CollapseButton = styled.button<{ collapsed: boolean }>`
+const CollapseButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== "$collapsed",
+})<{ $collapsed: boolean }>`
   position: absolute;
   right: -12px;
   top: 32px;
@@ -110,76 +127,82 @@ const CollapseButton = styled.button<{ collapsed: boolean }>`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transform: ${props => props.collapsed ? 'rotate(180deg)' : 'none'};
+  transform: ${(props) => (props.$collapsed ? "rotate(180deg)" : "none")};
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
   &:hover {
     background: #f1f5f9;
-    transform: ${props => props.collapsed ? 'rotate(180deg) scale(1.1)' : 'scale(1.1)'};
+    transform: ${(props) =>
+      props.$collapsed ? "rotate(180deg) scale(1.1)" : "scale(1.1)"};
   }
 `;
+
+// Sidebar Component
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
 
   return (
-    <SidebarContainer collapsed={collapsed}>
-      <CollapseButton 
-        collapsed={collapsed}
+    <SidebarContainer $collapsed={collapsed}>
+      <CollapseButton
+        $collapsed={collapsed}
         onClick={() => setCollapsed(!collapsed)}
       >
         <FiChevronLeft size={14} />
       </CollapseButton>
 
       <NavLinks>
-        <NavLink to="/dashboard" collapsed={collapsed}>
+        <NavLink to="/dashboard" $collapsed={collapsed}>
           <FiHome size={20} />
           <span>Dashboard</span>
         </NavLink>
 
-        <SectionSeparator collapsed={collapsed}>
-          {!collapsed && 'Gestión'}
+        <SectionSeparator $collapsed={collapsed}>
+          {!collapsed && "Gestión"}
         </SectionSeparator>
-        
-        <NavLink to="/routes" collapsed={collapsed}>
+
+        <NavLink to="/routes" $collapsed={collapsed}>
           <FiMap size={20} />
           <span>Rutas</span>
         </NavLink>
-        <NavLink to="/clientes" collapsed={collapsed}>
+        <NavLink to="/clientes" $collapsed={collapsed}>
           <FiUsers size={20} />
           <span>Clientes</span>
         </NavLink>
-        <NavLink to="/articulos" collapsed={collapsed}>
+        <NavLink to="/articulos" $collapsed={collapsed}>
           <FiBox size={20} />
           <span>Artículos</span>
         </NavLink>
 
-        <SectionSeparator collapsed={collapsed}>
-          {!collapsed && 'Configuración'}
+        <SectionSeparator $collapsed={collapsed}>
+          {!collapsed && "Configuración"}
         </SectionSeparator>
 
-        <NavLink to="/spins" collapsed={collapsed}>
+        <NavLink to="/spins" $collapsed={collapsed}>
           <FiCompass size={20} />
           <span>Giros</span>
         </NavLink>
-        <NavLink to="/groups" collapsed={collapsed}>
+        <NavLink to="/groups" $collapsed={collapsed}>
           <FiGrid size={20} />
           <span>Grupos</span>
         </NavLink>
-        <NavLink to="/users" collapsed={collapsed}>
+        <NavLink to="/users" $collapsed={collapsed}>
           <FiUsers size={20} />
           <span>Usuarios</span>
         </NavLink>
       </NavLinks>
 
-      <UserSection collapsed={collapsed}>
+      <UserSection $collapsed={collapsed}>
         <Avatar>
           <OnlineStatus />
         </Avatar>
         {!collapsed && (
-          <DropDown 
+          <DropDown
             trigger={
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
                 <span>Usuario</span>
                 <FiSettings size={14} />
               </div>
@@ -190,7 +213,14 @@ const Sidebar = () => {
             <Separator />
             <DropDownItem>Configuración</DropDownItem>
             <Separator />
-            <DropDownItem>Cerrar Sesión</DropDownItem>
+            <DropDownItem
+              onClick={() => {
+                localStorage.removeItem("token");
+                navigate("/login");
+              }}
+            >
+              Cerrar Sesión
+            </DropDownItem>
           </DropDown>
         )}
       </UserSection>

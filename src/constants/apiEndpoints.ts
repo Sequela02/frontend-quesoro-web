@@ -17,5 +17,7 @@ export const ENDPOINTS = {
   // Rutas para las rutas
   routes: `${API_BASE_URL}/routes`,
 
-  // Otros endpoints...
+  auth: `${API_BASE_URL}/auth`,
+
+  login: `http://localhost:8080/auth/login`,
 };

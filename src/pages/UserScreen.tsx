@@ -1,282 +1,293 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import styled from "styled-components";
-
-const Container = styled.div`
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-`;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  font-weight: bold;
-  color: #333;
-  display: flex;
-  align-items: center;
-`;
-
-
-const Controls = styled.div`
-  display: flex;
-  gap: 16px;
-`;
-
-const Input = styled.input`
-  padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  flex: 1;
-  font-size: 1rem;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-`;
-
-const Button = styled.button`
-  padding: 12px 20px;
-  font-size: 1rem;
-  font-weight: bold;
-  color: white;
-  background-color: #333;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-`;
-
-const ViewToggle = styled.div`
-  display: flex;
-  gap: 8px;
-
-  button {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    background: transparent;
-    border-radius: 8px;
-    cursor: pointer;
-
-    &.active {
-      background-color: #333;
-      color: white;
-    }
-  }
-`;
-
-const ListView = styled.ul`
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 0;
-`;
-
-const GridView = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-`;
-
-const UserCard = styled.div`
-  position: relative;
-  padding: 16px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #fafafa;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  cursor: pointer;
-
-  &:hover {
-    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
-  }
-`;
-
-const ActionMenu = styled.div`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  cursor: pointer;
-`;
-
-const StatusBadge = styled.span<{ isActive: boolean }>`
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  background-color: ${props => props.isActive ? '#4CAF50' : '#F44336'};
-  color: white;
-`;
-
-const StyledTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-
-  th, td {
-    padding: 16px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-  }
-
-  th {
-    background-color: #f5f5f5;
-    font-weight: bold;
-  }
-
-  tbody tr:hover {
-    background-color: #f9f9f9;
-  }
-`;
-
-const LoadingOverlay = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-`;
-
-const ErrorMessage = styled.div`
-  color: #f44336;
-  padding: 16px;
-  border: 1px solid #f44336;
-  border-radius: 8px;
-  margin: 16px 0;
-`;
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  roleId: number;
-}
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import Loader from "../components/Loader";
+import Modal from "../components/Modal";
+import UserForm from "../components/UserForm";
+import {
+  Container,
+  LoaderContainer,
+  Header,
+  Title,
+  Controls,
+  Input,
+  Button,
+  ViewToggle,
+  ErrorMessage,
+  StyledTable,
+  GridView,
+  Card,
+  StatusBadge,
+  LoadingOverlay,
+  EditButtonCard,
+  DeleteButtonCard,
+  ActionButtonsContainer,
+} from "../components/Styles";
+import { User, Role } from "../types/interfaces";
+import { FaEdit, FaTrashAlt, FaPlus, FaList, FaTh } from "react-icons/fa"; // React Icons
+import ModalConfirm from "../components/ModalConfirm";
+import { EditButton, DeleteButton } from "../components/Styles"; // Import the Edit and Delete buttons styled components
 
 const UserScreen: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"list" | "grid">("list");
-  const [activeUser, setActiveUser] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const { token } = useAuth();
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:8080/api/users');
-        setUsers(response.data);
+        const [userRes, roleRes] = await Promise.all([
+          axios.get("http://localhost:8080/api/users", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("http://localhost:8080/api/roles", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        setUsers(userRes.data || []);
+        setRoles(roleRes.data || []);
         setError(null);
-      } catch (error) {
-        setError('Failed to fetch users. Please try again later.');
-        console.error("Error fetching users:", error);
+      } catch (err) {
+        setError("Error fetching data. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUsers();
-  }, []);
+    fetchData();
+  }, [token]);
 
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(search.toLowerCase())
+  const handleSaveUser = async (user: User) => {
+    try {
+      const userToSave = {
+        ...user,
+        roleId: user.role.id, // Send only the roleId
+        password: user.password || undefined, // Only send password if provided
+      };
+
+      if (user.id) {
+        // Update user
+        const response = await axios.put(
+          `http://localhost:8080/api/users/${user.id}`,
+          userToSave,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setUsers((prev) => prev.map((u) => (u.id === user.id ? user : u)));
+      } else {
+        // Create new user
+        const response = await axios.post(
+          "http://localhost:8080/api/users",
+          userToSave,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setUsers((prev) => [...prev, response.data]);
+      }
+      setModalOpen(false);
+    } catch (err) {
+      setError("Error saving user. Please try again.");
+    }
+  };
+
+  const handleDeleteUser = async (user: User) => {
+    try {
+      if (!user) return;
+      const response = await axios.delete(
+        `http://localhost:8080/api/users/${user.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      setDeletingUser(null); // Close the modal after deleting
+    } catch (err) {
+      setError("Error deleting user. Please try again.");
+      setDeletingUser(null);
+    }
+  };
+
+  const handleOpenConfirmDelete = (user: User) => {
+    setDeletingUser(user);
+    setConfirmOpen(true);
+  };
+
+  const handleCloseConfirmDelete = () => {
+    setConfirmOpen(false);
+    setDeletingUser(null);
+  };
+
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(search.toLowerCase()) ||
+      user.username.toLowerCase().includes(search.toLowerCase())
   );
-
-  if (loading) {
-    return (
-      <Container>
-        <LoadingOverlay>Loading users...</LoadingOverlay>
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container>
-        <ErrorMessage>{error}</ErrorMessage>
-      </Container>
-    );
-  }
 
   return (
     <Container>
       <Header>
-        <Title>
-          Users
-       
-        </Title>
+        <Title>Usuarios</Title>
         <Controls>
           <Input
-            placeholder="Search users..."
+            placeholder="Buscar usuarios..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <Button>Add New User</Button>
+          <Button
+            onClick={() => {
+              setEditingUser(null);
+              setModalOpen(true);
+            }}
+          >
+            <FaPlus /> Nuevo
+          </Button>
           <ViewToggle>
             <button
               className={view === "list" ? "active" : ""}
               onClick={() => setView("list")}
             >
-              List View
+              <FaList /> Tabla
             </button>
             <button
               className={view === "grid" ? "active" : ""}
               onClick={() => setView("grid")}
             >
-              Grid View
+              <FaTh /> Cuadrícula
             </button>
           </ViewToggle>
         </Controls>
       </Header>
 
-      {view === "list" ? (
-        <StyledTable>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role ID</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user.id}>
-                <td>{user.name}</td>
-                <td>{user.email}</td>
-                <td>{user.roleId}</td>
-                <td>
-                  <StatusBadge isActive={user.roleId !== 0}>
-                    {user.roleId !== 0 ? 'Active' : 'Inactive'}
-                  </StatusBadge>
-                </td>
+      {loading && (
+        <LoaderContainer>
+          <LoadingOverlay>
+            <Loader />
+          </LoadingOverlay>
+        </LoaderContainer>
+      )}
+
+      {!loading && error && <ErrorMessage>{error}</ErrorMessage>}
+
+      {!loading && !error && filteredUsers.length === 0 && (
+        <ErrorMessage>
+          No se encontraron usuarios que coincidan con la búsqueda.
+        </ErrorMessage>
+      )}
+
+      {!loading &&
+        !error &&
+        filteredUsers.length > 0 &&
+        (view === "list" ? (
+          <StyledTable>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Usuario</th>
+                <th>Correo electrónico</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.name}</td>
+                  <td>{user.username}</td>
+                  <td>{user.email}</td>
+                  <td>{user.role.name}</td>
+                  <td>
+                    <StatusBadge isActive={!!user.role.id}>
+                      {user.role.id ? "Activo" : "Inactivo"}
+                    </StatusBadge>
+                  </td>
+                  <td>
+                    <ActionButtonsContainer>
+                      <EditButton
+                        onClick={() => {
+                          setEditingUser(user);
+                          setModalOpen(true);
+                        }}
+                      >
+                        <FaEdit />
+                      </EditButton>
+                      <DeleteButton
+                        onClick={() => handleOpenConfirmDelete(user)} // Open delete confirmation modal
+                      >
+                        <FaTrashAlt />
+                      </DeleteButton>
+                    </ActionButtonsContainer>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </StyledTable>
+        ) : (
+          <GridView>
+            {filteredUsers.map((user) => (
+              <Card key={user.id}>
+                <strong>{user.name}</strong>
+                <p>@{user.username}</p>
+                <p>{user.email}</p>
+                <p>Rol: {user.role.name}</p>
+                <StatusBadge isActive={!!user.role.id}>
+                  {user.role.id ? "Activo" : "Inactivo"}
+                </StatusBadge>
+                <div>
+                  <ActionButtonsContainer>
+                    <EditButtonCard
+                      onClick={() => {
+                        setEditingUser(user);
+                        setModalOpen(true);
+                      }}
+                    >
+                      <FaEdit /> Editar
+                    </EditButtonCard>
+                    <DeleteButtonCard
+                      onClick={() => handleOpenConfirmDelete(user)} // Open delete confirmation modal
+                    >
+                      <FaTrashAlt /> Eliminar
+                    </DeleteButtonCard>
+                  </ActionButtonsContainer>
+                </div>
+              </Card>
             ))}
-          </tbody>
-        </StyledTable>
-      ) : (
-        <GridView>
-          {filteredUsers.map((user) => (
-            <UserCard
-              key={user.id}
-              onClick={() => setActiveUser(user.id)}
-            >
-              <ActionMenu>⋮</ActionMenu>
-              <strong>{user.name}</strong>
-              <p>{user.email}</p>
-              <StatusBadge isActive={user.roleId !== 0}>
-                {user.roleId !== 0 ? 'Active' : 'Inactive'}
-              </StatusBadge>
-            </UserCard>
-          ))}
-        </GridView>
+          </GridView>
+        ))}
+
+      {modalOpen && (
+        <Modal
+          title={editingUser ? "Editar Usuario" : "Nuevo Usuario"}
+          onClose={() => setModalOpen(false)}
+        >
+          <UserForm
+            user={editingUser}
+            roles={roles}
+            onSave={handleSaveUser}
+            onDelete={handleDeleteUser} // Delete logic is now handled outside the modal
+          />
+        </Modal>
+      )}
+
+      {confirmOpen && (
+        <ModalConfirm
+          title="Confirmar Eliminación"
+          message="¿Estás seguro de que deseas eliminar este usuario?"
+          onConfirm={() => handleDeleteUser(deletingUser!)} // Make sure deletingUser is not null
+          onCancel={handleCloseConfirmDelete}
+        />
       )}
     </Container>
   );
